@@ -34,6 +34,7 @@ class SearchListCell: UITableViewCell {
     private func setAppearance() {
         
         self.vstackView.do {
+            $0.backgroundColor = .black
             self.addSubview($0)
             $0.snp.makeConstraints {
                 $0.width.height.equalToSuperview()
@@ -58,6 +59,7 @@ class SearchListCell: UITableViewCell {
         vstackView.setCustomSpacing(20, after: vstackView.arrangedSubviews.last!)
         
         self.movieTitle.do {
+            $0.textColor = .white
             vstackView.addArrangedSubview($0)
             $0.font = .systemFont(ofSize: 14)
             $0.numberOfLines = 0

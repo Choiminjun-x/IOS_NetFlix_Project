@@ -20,11 +20,11 @@ protocol SearchDisplayLogic: AnyObject {
 
 class SearchViewController: UIViewController, SearchDisplayLogic{
     
+    var pageView: SearchPageView { self.view as! SearchPageView }
+    
     //MARK: - Properties
     var interactor: SearchBusinessLogic?
     var router: (NSObjectProtocol & SearchRoutingLogic & SearchDataPassing)?
-    
-    let pageView: SearchView = .init()
     
     let disposeBag: DisposeBag = .init()
     
@@ -58,7 +58,7 @@ class SearchViewController: UIViewController, SearchDisplayLogic{
     
     // MARK: - View lifecycle
     override func loadView() {
-        self.view = self.pageView
+        self.view = SearchView.create()
         self.pageEvent()
         self.tapEvent()
     }
@@ -66,7 +66,21 @@ class SearchViewController: UIViewController, SearchDisplayLogic{
     override func viewDidLoad() {
         super.viewDidLoad()
         requestSearchList(pageType: .first, keyWord: nil)
+       
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
         self.makeSearchBar()
+        
+        let navigationBarAppearance = UINavigationBarAppearance()
+        navigationBarAppearance.backgroundColor = .black
+        navigationBarAppearance.titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.white]
+        navigationBarAppearance.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.white]
+        navigationController?.navigationBar.prefersLargeTitles = false
+        navigationController!.navigationBar.standardAppearance = navigationBarAppearance
+        navigationController!.navigationBar.scrollEdgeAppearance = navigationBarAppearance
     }
     
     // MARK: - View Method
@@ -102,11 +116,12 @@ class SearchViewController: UIViewController, SearchDisplayLogic{
         //검색창 클릭 시 나머지 뷰들을 어둡게 할건지
         searchController.obscuresBackgroundDuringPresentation = true
         searchController.searchBar.delegate  = self
-    
+        
         self.navigationItem.searchController = searchController
+        
         self.navigationItem.title = "영화 검색"
         //스크롤 시 searchBar를 숨기는지
-        self.navigationItem.hidesSearchBarWhenScrolling = true
+        self.navigationItem.hidesSearchBarWhenScrolling = true 
     }
 }
 

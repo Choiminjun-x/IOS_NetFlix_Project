@@ -23,7 +23,7 @@ enum MainViewModel {
         var isFirstPage: Bool
         var isLastPage: Bool
     }
-    struct TopRatedList  { 
+    struct TopRatedList  {
         var cellModels: [MainTopRatedListCellModel]
         var isFirstPage: Bool
         var isLastPage: Bool
@@ -35,22 +35,30 @@ enum MainViewModel {
     }
 }
 
-class MainView: UIView {
+protocol MainPageView where Self: MainView {
+    
+}
+class MainView: UIView, MainPageView {
     
     //MARK: - Properties
     
+    static func create() -> MainView {
+        let bundle = Bundle(for: MainView.self)
+        let nib = bundle.loadNibNamed("MainView", owner: nil)
+        let view = nib?.first
+        return view as! MainView
+    }
+    
     var router: (NSObjectProtocol & MainRoutingLogic & MainDataPassing)?
     
+    @IBOutlet weak var bannerImageView: UIImageView!
+    
+    @IBOutlet weak var popularListView: UICollectionView!
+    @IBOutlet weak var nowplayingListView: UICollectionView!
+    @IBOutlet weak var topratedListView: UICollectionView!
+    @IBOutlet weak var upcomingListView: UICollectionView!
+    
     private let disposeBag: DisposeBag = .init()
-    
-    private let scrollView: UIScrollView = .init()
-    private let vstackView: UIStackView = .init()
-    
-    private let stretchyheaderView: UIView = .init()
-    private let stretchyheaderImageView: UIImageView = .init()
-    
-    private let buttonView: UIView = .init()
-    private let buttonStackView: UIStackView = .init()
     
     //메인 버튼 클릭 이벤트
     internal let infoBtnTapEvent: PublishRelay<Int> = .init()
@@ -59,8 +67,6 @@ class MainView: UIView {
     
     private var randomNumber: Int = 0
     
-    private let popularTitleLabel: UILabel = .init()
-    private let popularListView: UICollectionView = .init(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
     private let popularListDelegate: popularListDelegate = .init()
     internal var popularListNextEvent: PublishRelay<Void> {
         get {
@@ -77,9 +83,7 @@ class MainView: UIView {
             return self.popularListDelegate.contextMenuClickEvent
         }
     }
-    
-    private let nowplayingTitleLabel: UILabel = .init()
-    private let nowplayingListView: UICollectionView = .init(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+  
     private let nowplayingListDelegate: nowplayingListDelegate = .init()
     internal var nowplayingListNextEvent: PublishRelay<Void> {
         get {
@@ -97,8 +101,6 @@ class MainView: UIView {
         }
     }
     
-    private let topratedTitleLabel: UILabel = .init()
-    private let topratedListView: UICollectionView = .init(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
     private let topratedListDelegate: topratedListDelegate = .init()
     internal var topratedListNextEvent: PublishRelay<Void> {
         get {
@@ -115,9 +117,7 @@ class MainView: UIView {
             return self.topratedListDelegate.contextMenuClickEvent
         }
     }
-    
-    private let upcomingTitleLabel: UILabel = .init()
-    private let upcomingListView: UICollectionView = .init(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+   
     private let upcomingListDelegate: upcomingListDelegate = .init()
     internal var upcomingListNextEvent: PublishRelay<Void> {
         get {
@@ -136,207 +136,15 @@ class MainView: UIView {
     }
     
     // MARK: - Object lifecycle
-    required init?(coder: NSCoder) {
-        fatalError()
-    }
-    required init() {
-        super.init(frame: .zero)
-        self.setAppearance()
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        self.configure()
     }
     
-    // MARK: - View Method 
-    private func setAppearance() {
-        //전체 ScrollView
-        scrollView.do {
-            self.addSubview($0)
-            $0.snp.makeConstraints {
-                //                $0.top.equalTo(safeAreaLayoutGuide.snp.top)
-                $0.width.height.equalToSuperview()
-                $0.bottom.equalToSuperview().offset(-80)
-                $0.centerX.centerY.equalToSuperview()
-            }
-            $0.backgroundColor = .black
-            $0.alwaysBounceVertical = true
-            //스크롤뷰 스크롤바 숨김 
-            $0.showsHorizontalScrollIndicator = false
-            $0.showsVerticalScrollIndicator = false
-        }
-        //영화 리스트 StackView
-        vstackView.do {
-            scrollView.addSubview($0)
-            $0.snp.makeConstraints {
-                $0.width.equalToSuperview()
-                $0.centerX.equalToSuperview()
-                $0.bottom.equalToSuperview()
-                $0.top.equalTo(scrollView.snp.top).offset(570)
-            }
-            $0.layoutMargins = .init(top: 0, left: 10, bottom: 0, right: 10)
-            $0.isLayoutMarginsRelativeArrangement = true
-            $0.axis = .vertical
-            $0.alignment = .fill
-            $0.distribution = .fill
-        }
-        
-        //stretchy Header
-        stretchyheaderView.do {
-            
-            scrollView.addSubview($0)
-            $0.snp.makeConstraints {
-                $0.top.left.right.equalTo(self)
-                $0.bottom.equalTo(self.vstackView.snp.top).offset(-10).priority(900)
-            }
-            /*
-             //NSLayout
-             let headerContainerViewBottom : NSLayoutConstraint!
-            //AutoResizingMask와 충돌을 막기 위해서
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            //동적으로 Constraint가 변경될 수 있도록
-            NSLayoutConstraint.activate([ //한번에 여러 제약 조건을 업데이트 해주는 NSLayoutConstraint의 메소드
-                $0.topAnchor.constraint(equalTo: self.topAnchor),
-                $0.leadingAnchor.constraint(equalTo: self.leadingAnchor),
-                $0.trailingAnchor.constraint(equalTo: self.trailingAnchor)
-            ])
-            headerContainerViewBottom = $0.bottomAnchor.constraint(equalTo: self.vstackView.topAnchor, constant: -10)
-            //제약 조건 우선 순위
-            headerContainerViewBottom.priority = UILayoutPriority(900)
-            //제약 조건의 활성 상태 설정
-            headerContainerViewBottom.isActive = true
-            */
-        }
-        
-        stretchyheaderImageView.do {
-            stretchyheaderView.addSubview($0)
-            $0.clipsToBounds = true
-            
-            //짤리더라도 비율을 유지하면서 꽉 채운다
-            $0.contentMode = .scaleAspectFill
-    
-            $0.snp.makeConstraints {
-                $0.left.right.bottom.equalToSuperview()
-                $0.top.equalTo(self).priority(900)
-//                $0.top.equalToSuperview().priority(900)
-                $0.height.greaterThanOrEqualTo(400)
-            }
-            /*
-            //AutoResizingMask와 충돌을 막기 위해서
-            stretchyheaderImageView.translatesAutoresizingMaskIntoConstraints = false
-          
-            NSLayoutConstraint.activate([ //한번에 여러 제약 조건을 업데이트 해주는 NSLayoutConstraint의 메소드
-                self.stretchyheaderImageView.heightAnchor.constraint(greaterThanOrEqualToConstant: 400), // 400이하로 작아지지 않는다.
-                self.stretchyheaderImageView.leadingAnchor.constraint(equalTo: self.stretchyheaderView.leadingAnchor),
-                self.stretchyheaderImageView.trailingAnchor.constraint(equalTo: self.stretchyheaderView.trailingAnchor),
-                self.stretchyheaderImageView.bottomAnchor.constraint(equalTo: self.stretchyheaderView.bottomAnchor)
-            ])
-            let imageViewTopConstraint : NSLayoutConstraint!
-            imageViewTopConstraint = self.stretchyheaderImageView.topAnchor.constraint(equalTo: self.topAnchor)
-            imageViewTopConstraint.priority = UILayoutPriority(900)
-            imageViewTopConstraint.isActive = true
-             */
-        }
-        
-        buttonView.do {
-            vstackView.addArrangedSubview($0)
-            $0.backgroundColor = .black
-            $0.snp.makeConstraints {
-                $0.width.equalToSuperview()
-                $0.height.equalTo(40)
-            }
-        }
-        
-        buttonStackView.do {
-            $0.backgroundColor = .black
-            buttonView.addSubview($0)
-            $0.snp.makeConstraints {
-                $0.width.height.equalToSuperview()
-                $0.left.equalTo(-10)
-            }
-            $0.axis = .horizontal
-            $0.alignment = .fill
-            $0.distribution = .fill
-            //뷰와 뷰 사이의 간격을 일정하게 만들어주는 역할
-        }
-        
-        UIButton().do {
-            $0.backgroundColor = .black
-            buttonStackView.addArrangedSubview($0)
-            $0.snp.makeConstraints {
-                $0.height.equalToSuperview()
-                $0.width.equalTo(120)
-            }
-            $0.tintColor = .white
-            $0.setImage(UIImage(systemName: "plus"), for: .normal)
-            $0.titleLabel?.font = .boldSystemFont(ofSize: 12)
-            $0.setTitle("찜하기", for: .normal)
-            $0.imageEdgeInsets.left = -17
-            
-            $0.rx.tap
-                .asDriver() //Main Scheduler에서 동작한다
-                .asObservable()
-                .subscribe(onNext:{ [weak self] _ in
-                    self?.favoriteBtnTapEvent.accept((self?.randomNumber)!)
-                }).disposed(by: self.disposeBag)
-        }
-        
-        UIButton().do {
-            $0.backgroundColor = .white
-            buttonStackView.addArrangedSubview($0)
-            $0.snp.makeConstraints {
-                $0.height.equalTo(buttonStackView.snp.height)
-                $0.width.equalTo(100)
-                $0.centerX.centerY.equalToSuperview()
-            }
-            $0.tintColor = .black
-            $0.setImage(UIImage(systemName: "info.circle.fill"), for: .normal)
-            $0.imageEdgeInsets.left = -20
-            $0.setTitle("정보", for: .normal)
-            $0.setTitleColor(.black, for: .normal)
-            $0.titleLabel?.font = .boldSystemFont(ofSize: 14)
-            $0.layer.cornerRadius = 5
-            $0.layer.borderWidth = 2
-            $0.layer.borderColor = UIColor.white.cgColor
-            $0.rx.tap
-                .asDriver()
-                .asObservable()
-                .subscribe(onNext:{ [weak self] _ in
-                    self?.infoBtnTapEvent.accept((self?.randomNumber)!)
-                }).disposed(by: self.disposeBag)
-        }
-        
-        UIButton().do {
-            $0.backgroundColor = .black
-            buttonStackView.addArrangedSubview($0)
-            $0.snp.makeConstraints {
-                $0.height.equalToSuperview()
-                $0.width.equalTo(120)
-            }
-            $0.setTitle("더 보기", for: .normal)
-            $0.titleLabel?.font = .boldSystemFont(ofSize: 12)
-            
-            $0.rx.tap
-                .asDriver()
-                .asObservable()
-                .subscribe(onNext:{
-                    print("Btn3 Click")
-                }).disposed(by: self.disposeBag)
-        }
-        
-        self.popularTitleLabel.do {
-            vstackView.addArrangedSubview($0)
-            $0.text = "인기 콘텐츠"
-            $0.font = .boldSystemFont(ofSize: 17)
-            $0.textColor = .white
-            $0.snp.makeConstraints {
-                $0.height.equalTo(20)
-            }
-        }
-        
+    // MARK: - View Method
+
+    private func configure() {
         self.popularListView.do {
-            vstackView.addArrangedSubview($0)
-            $0.backgroundColor = .clear
-            $0.snp.makeConstraints {
-                $0.height.equalTo(300)
-                $0.width.centerX.equalToSuperview()
-            }
             $0.delegate = self.popularListDelegate
             $0.dataSource = self.popularListDelegate
             $0.register(MainPopularListCell.self, forCellWithReuseIdentifier: "MainPopularListCell")
@@ -346,26 +154,7 @@ class MainView: UIView {
             }
         }
         
-        vstackView.setCustomSpacing(5, after: vstackView.arrangedSubviews.last!)
-        
-        self.nowplayingTitleLabel.do {
-            vstackView.addArrangedSubview($0)
-            $0.backgroundColor = .black
-            $0.text = "극장 상영 컨텐츠"
-            $0.font = .boldSystemFont(ofSize: 17)
-            $0.textColor = .white
-            $0.snp.makeConstraints {
-                $0.height.equalTo(20)
-            }
-        }
-        
         self.nowplayingListView.do {
-            vstackView.addArrangedSubview($0)
-            $0.backgroundColor = .black
-            $0.snp.makeConstraints {
-                $0.height.equalTo(180)
-            }
-            
             $0.delegate = self.nowplayingListDelegate
             $0.dataSource = self.nowplayingListDelegate
             $0.register(MainNowPlayingListCell.self, forCellWithReuseIdentifier: "MainNowPlayingListCell")
@@ -374,26 +163,8 @@ class MainView: UIView {
                 $0.scrollDirection = .horizontal
             }
         }
-        vstackView.setCustomSpacing(5, after: vstackView.arrangedSubviews.last!)
-        
-        self.topratedTitleLabel.do {
-            vstackView.addArrangedSubview($0)
-            $0.backgroundColor = .black
-            $0.text = "오직 넷플릭스에서"
-            $0.font = .boldSystemFont(ofSize: 17)
-            $0.textColor = .white
-            $0.snp.makeConstraints {
-                $0.height.equalTo(20)
-            }
-        }
         
         self.topratedListView.do {
-            vstackView.addArrangedSubview($0)
-            $0.backgroundColor = .black
-            $0.snp.makeConstraints {
-                $0.height.equalTo(180)
-            }
-            
             $0.delegate = self.topratedListDelegate
             $0.dataSource = self.topratedListDelegate
             $0.register(MainTopRatedListCell.self, forCellWithReuseIdentifier: "MainTopRatedListCell")
@@ -402,26 +173,8 @@ class MainView: UIView {
                 $0.scrollDirection = .horizontal
             }
         }
-        vstackView.setCustomSpacing(5, after: vstackView.arrangedSubviews.last!)
-        
-        self.upcomingTitleLabel.do {
-            vstackView.addArrangedSubview($0)
-            $0.backgroundColor = .black
-            $0.text = "개봉 예정 컨텐츠"
-            $0.font = .boldSystemFont(ofSize: 17)
-            $0.textColor = .white
-            $0.snp.makeConstraints {
-                $0.height.equalTo(20)
-            }
-        }
         
         self.upcomingListView.do {
-            vstackView.addArrangedSubview($0)
-            $0.backgroundColor = .black
-            $0.snp.makeConstraints {
-                $0.height.equalTo(180)
-            }
-            
             $0.delegate = self.upcomingListDelegate
             $0.dataSource = self.upcomingListDelegate
             $0.register(MainUpComingListCell.self, forCellWithReuseIdentifier: "MainUpComingListCell")
@@ -430,16 +183,17 @@ class MainView: UIView {
                 $0.scrollDirection = .horizontal
             }
         }
+        
     }
     
     //MARK: - display View
     public func displayPopularList(listModel: MainViewModel.PopularList) {
-        //메인 화면에 스트레치 헤더뷰 이미지 관리하는 부분 
+        //메인 화면에 스트레치 헤더뷰 이미지 관리하는 부분
         let randomNum = Int.random(in: 0 ..< 20)
         self.randomNumber = randomNum
         let mainImage = listModel.cellModels[randomNum]
         //스트레치 이미지 뷰에 랜덤으로 이미지 삽입
-        self.stretchyheaderImageView.sd_setImage(with: URL(string: mainImage.imageURL), completed: nil)
+        self.bannerImageView.sd_setImage(with: URL(string: mainImage.imageURL), completed: nil)
         
         self.popularListDelegate.cellModels = {
             if listModel.isFirstPage {

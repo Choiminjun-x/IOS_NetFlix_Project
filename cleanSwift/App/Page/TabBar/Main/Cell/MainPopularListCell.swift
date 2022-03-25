@@ -15,9 +15,9 @@ struct MainPopularListCellModel {
 
 class MainPopularListCell: UICollectionViewCell {
     
-    //MARK: - Properties
+    // MARK: - Properties
     private let imageView: UIImageView = .init()
-
+    
     // MARK: - Object lifecycle
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -31,8 +31,6 @@ class MainPopularListCell: UICollectionViewCell {
     // MARK: - View Method
     private func setAppearance() {
         self.imageView.do {
-            //masksToBounds -> layer의 프로퍼티로 뷰를 기준으로 바깥에 있는 것은 짤림
-            //layer view에 일을 시키면 layer 객체에서 이 일들을 직접 수행
             $0.layer.masksToBounds = true
             $0.layer.cornerRadius = 5
             self.addSubview($0)

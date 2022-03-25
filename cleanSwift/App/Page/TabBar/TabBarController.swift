@@ -37,5 +37,8 @@ class TabBarController: UITabBarController {
  
         //tab bar에 올리기
         setViewControllers([nav1,nav2, nav3], animated: false)
+        
+        UITabBar.appearance().tintColor = UIColor.gray
+        UITabBar.appearance().barTintColor = UIColor.black
     }
 }

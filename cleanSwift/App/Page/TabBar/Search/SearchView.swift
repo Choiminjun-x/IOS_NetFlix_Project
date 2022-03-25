@@ -20,18 +20,26 @@ enum SearchViewModel {
     }
 }
 
-class SearchView: UIView {
+protocol SearchPageView where Self: SearchView {
+}
+
+class SearchView: UIView, SearchPageView {
     
-    required init?(coder: NSCoder) {
-        fatalError()
+    static func create() -> SearchView {
+        let bundle = Bundle(for: SearchView.self)
+        let nib = bundle.loadNibNamed("SearchView", owner: nil)
+        let view = nib?.first
+        return view as! SearchView
     }
-    required init() {
-        super.init(frame: .zero)
-        self.setAppearance()
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        self.configure()
     }
     
     //MARK: - Properties
-    private let searchResultView: UITableView = .init(frame: .zero)
+//    private let searchResultView: UITableView = .init(frame: .zero)
+    @IBOutlet weak var searchResultView: UITableView!
     private let searchListViewDelegate: searchResultViewDelegate = .init()
     
     //onNext가 아니라 accept이다 (accept안에 onNext가 구현되어 있음)
@@ -48,16 +56,9 @@ class SearchView: UIView {
     }
     
     // MARK: - View
-    func setAppearance() {
+    func configure() {
+        self.backgroundColor = .black
         self.searchResultView.do {
-            self.addSubview($0)
-            $0.snp.makeConstraints {
-                $0.width.equalToSuperview()
-                $0.top.equalToSuperview().offset(100)
-                $0.centerX.equalToSuperview()
-                $0.bottom.equalToSuperview().offset(-80)
-                $0.leading.equalToSuperview().offset(10)
-            }
             $0.delegate = self.searchListViewDelegate
             $0.dataSource = self.searchListViewDelegate
             $0.register(SearchListCell.self, forCellReuseIdentifier: "SearchListCell")

@@ -27,12 +27,12 @@ protocol MainDisplayLogic: AnyObject {
 
 class MainViewController: UIViewController, MainDisplayLogic {
     
+    var pageView: MainPageView { self.view as! MainPageView }
     
     //MARK: - Properties
     var interactor: MainBusinessLogic?
     var router: (NSObjectProtocol & MainRoutingLogic & MainDataPassing)?
     
-    private let pageView: MainView = .init()
     private let imageView: UIImageView = .init()
     
     var popularModel: [BookMarkInfoModel] = []
@@ -44,18 +44,13 @@ class MainViewController: UIViewController, MainDisplayLogic {
     let disposeBag: DisposeBag = .init()
     
     // MARK: - Object lifecycle
-    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-        setup()
+    public required init() {
+        super.init(nibName: nil, bundle: nil)
+        self.setup()
     }
     
     required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        setup()
-    }
-    
-    deinit {
-        print("--Memory Deallocation--")
+        return nil
     }
     
     // MARK: - Setup
@@ -74,7 +69,7 @@ class MainViewController: UIViewController, MainDisplayLogic {
     
     // MARK: - View lifecycle
     override func loadView() {
-        self.view = self.pageView
+        self.view = MainView.create()
         self.pageEvent()
         self.bookMarkEvent()
     }
@@ -82,7 +77,10 @@ class MainViewController: UIViewController, MainDisplayLogic {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.requestAPI()
-        self.navigationConf()
+        self.navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
+        self.navigationController?.navigationBar.shadowImage = UIImage()
+        self.navigationController?.navigationBar.isTranslucent = true
+        self.navigationController?.view.backgroundColor = .clear
     }
     
     // MARK: - Book Mark Event
@@ -221,15 +219,6 @@ class MainViewController: UIViewController, MainDisplayLogic {
             .subscribe(onNext: { index in
                 self.router?.routeToUpComingDetail(index: index)
             }).disposed(by: self.disposeBag)
-    }
-    
-    //MARK: - NavigationConfigure
-    func navigationConf(){
-        //네비게이션 바 투명 처리
-        self.navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
-        self.navigationController?.navigationBar.shadowImage = UIImage()
-        self.navigationController?.navigationBar.isTranslucent = true
-        self.navigationController?.view.backgroundColor = .clear
     }
     
     //MARK: - request to interactor

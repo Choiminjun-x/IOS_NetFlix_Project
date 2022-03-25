@@ -59,7 +59,11 @@ class DetailViewController: UIViewController, DetailDisplayLogic {
     
     override func viewDidLoad(){
         super.viewDidLoad()
-        requestMovieDetail()
+        self.requestMovieDetail()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
     }
     
     // MARK: - View Method
